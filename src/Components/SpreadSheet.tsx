@@ -29,6 +29,10 @@ function SpreadSheet({ documentName }: SpreadSheetProps) {
   const [currentCell, setCurrentCell] = useState(spreadSheetClient.getWorkingCellLabel());
   const [currentlyEditing, setCurrentlyEditing] = useState(spreadSheetClient.getEditStatus());
   const [userName, setUserName] = useState(window.sessionStorage.getItem('userName') || "");
+  const [loginWarning, setLoginWarning] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
+
+
 
 
   function updateDisplayValues(): void {
@@ -50,24 +54,41 @@ function SpreadSheet({ documentName }: SpreadSheetProps) {
     return () => clearInterval(interval);
   });
 
-
   function getUserLogin() {
-    return <div>
-      <input
-        type="text"
-        placeholder="User name"
-        defaultValue={userName}
-        onChange={(event) => {
-          // get the text from the input
-          let userName = event.target.value;
-          window.sessionStorage.setItem('userName', userName);
-          // set the user name
-          setUserName(userName);
-          spreadSheetClient.userName = userName;
-        }} />
-    </div>
-
+    return (
+      <div>
+        <input
+          type="text"
+          placeholder="User name"
+          defaultValue={userName}
+          onChange={(event) => {
+            // get the text from the input
+            let userName = event.target.value;
+            if (userName) {
+              setLoginWarning(false); // Reset the warning when a user provides their name
+            }
+            // set the user name
+            setUserName(userName);
+          }}
+        />
+        <button
+          onClick={() => {
+            if (userName) {
+              setLoggedIn(true);
+              spreadSheetClient.userName = userName;
+              window.sessionStorage.setItem('userName', userName);
+            } else {
+              setLoginWarning(true);
+            }
+          }}
+        >
+          Login
+        </button>
+        {loggedIn && <div>You have logged in as {userName}</div>}
+      </div>
+    );
   }
+  
 
   /**
    * 
@@ -136,6 +157,10 @@ function SpreadSheet({ documentName }: SpreadSheetProps) {
    * If the edit status is false then it will ask the machine to update the current formula.
    */
   function onCellClick(event: React.MouseEvent<HTMLButtonElement>): void {
+    if (!userName) {
+      setLoginWarning(true);
+      return; // Early return to prevent further processing
+    }
 
     const cellLabel = event.currentTarget.getAttribute("cell-label");
     // calculate the current row and column of the clicked on cell
@@ -162,6 +187,10 @@ function SpreadSheet({ documentName }: SpreadSheetProps) {
     <div>
       <Formula formulaString={formulaString} resultString={resultString}  ></Formula>
       <Status statusString={statusString}></Status>
+
+      {/* Login Warning */}
+      {loginWarning && <div style={{color: 'red'}}>Please login before interacting with the spreadsheet!</div>}
+
       {<SheetHolder cellsValues={cells}
         onClick={onCellClick}
         currentCell={currentCell}

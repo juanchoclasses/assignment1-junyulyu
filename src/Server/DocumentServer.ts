@@ -240,6 +240,33 @@ app.put('/document/removetoken/:name', (req: express.Request, res: express.Respo
     res.status(200).send(resultJSON);
 });
 
+app.put('/document/clear/formula/:name', (req: express.Request, res: express.Response) => {
+    const name = req.params.name;
+    // is this name valid?
+    const documentNames = documentHolder.getDocumentNames();
+    if (documentNames.indexOf(name) === -1) {
+    res.status(404).send(`Document ${name} not found`);
+    return;
+    }
+
+    // get the user name from the body
+    const userName = req.body.userName;
+    if (!userName) {
+    res.status(400).send('userName is required');
+    return;
+    }
+
+    // clear the formula
+    const resultJSON = documentHolder.clearFormula(name, userName);
+     // Validate the result and send the response
+     if (resultJSON) {
+        res.status(200).send(resultJSON);
+    } else {
+        res.status(500).send('Failed to clear the formula'); // or handle the error appropriately
+    }
+
+});
+
 // get the port we should be using
 const port = PortsGlobal.serverPort;
 // start the app and test it
